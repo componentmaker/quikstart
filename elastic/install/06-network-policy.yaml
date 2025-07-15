@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: elasticsearch-network-policy  # Same name, so it will replace the old one
+  namespace: elastic
+spec:
+  # Apply this policy to all pods with the 'app=elasticsearch' label
+  podSelector:
+    matchLabels:
+      app: elasticsearch
+  policyTypes:
+  - Ingress
+  - Egress
+
+  # Define rules for INCOMING traffic
+  ingress:
+  - from:
+      # Allow traffic FROM other Elasticsearch pods
+      - podSelector:
+          matchLabels:
+            app: elasticsearch
+      # Allow traffic FROM any pod in the same 'elastic' namespace
+      # This is useful for clients or other tools in the same namespace
+      - namespaceSelector:
+          matchLabels:
+            # Use a standard label that is present on all namespaces by default
+            kubernetes.io/metadata.name: elastic
+    ports:
+      # On the following ports
+      - protocol: TCP
+        port: 9200  # for HTTP, clients, and probes
+      - protocol: TCP
+        port: 9300  # for inter-node transport/clustering
+
+  # Define rules for OUTGOING traffic
+  egress:
+  # Allow pods to talk to each other
+  - to:
+    - podSelector:
+        matchLabels:
+          app: elasticsearch
+  # Allow pods to talk to DNS to resolve service names
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP

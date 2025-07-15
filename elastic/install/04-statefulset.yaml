@@ -1,0 +1,181 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: elastic
+spec:
+  podManagementPolicy: "Parallel"
+  serviceName: es-svc
+  replicas: 3 # Recommended 3 master-eligible nodes for production
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      # Optional: Node Selector or Tolerations for specific nodes
+      # nodeSelector:
+      #   node-role.kubernetes.io/data: "true"
+
+      # Pod Anti-Affinity for High Availability
+      securityContext:
+        fsGroup: 1000        # Ensure the volume's group ID is 1000
+        # runAsUser: 1000      # Run containers as user ID 1000 (Elasticsearch user)
+        # runAsGroup: 1000     # Run containers as group ID 1000     
+        # fsGroupChangePolicy: "Always"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: elasticsearch
+              topologyKey: kubernetes.io/hostname # Spread pods across different nodes
+      
+      initContainers:
+      - name: sysctl
+        image: busybox:1.36.1 # Use a recent busybox image
+        command: ["sh", "-c", "sysctl -w vm.max_map_count=262144"]
+        securityContext:
+          privileged: true # Required for sysctl
+          runAsUser: 0           # Run init container as root to ensure sysctl works
+          runAsGroup: 0
+      # - name: setup-keystore
+      #   image: docker.elastic.co/elasticsearch/elasticsearch:8.15.5
+      #   command:
+      #     - /bin/bash
+      #     - -c
+      #     - |
+      #       set -e
+      #       echo "Setting up Elasticsearch Keystore..."
+      #       # Create an empty keystore if it doesn't exist
+      #       if [ ! -f config/elasticsearch.keystore ]; then
+      #         echo "Creating new keystore..."
+      #         bin/elasticsearch-keystore create
+      #       fi
+      #       # Add the bootstrap password from the secret. The '|| true' prevents failure if the key already exists on restart.
+      #       echo "$ELASTIC_PASSWORD" | bin/elasticsearch-keystore add -x 'bootstrap.password' || true
+      #       echo "Keystore setup complete."
+        # env:
+        #   - name: ELASTIC_PASSWORD
+        #     valueFrom:
+        #       secretKeyRef:
+        #         name: elastic-credentials
+        #         key: elastic-password
+        # volumeMounts:
+        # # Note: We only need to mount the 'data' volume here, as the keystore
+        # # is written to the persistent data directory. The main container will
+        # # then have access to it.
+        # - name: data
+        #   mountPath: /usr/share/elasticsearch/data
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.15.5
+        env:
+          - name: ELASTIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: elastic-credentials
+                key: elastic-password          
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: CLUSTER_NAME
+            value: elasticsearch-cluster
+          # - name: DISCOVERY_SERVICE
+          #   value: es-svc.elastic.svc.cluster.local
+          - name: ES_JAVA_OPTS
+            # Adjust based on your node memory. Typically 50% of allocated memory, but not more than 30.5GB.
+            # Example: for 4GiB memory limit, set Xms/Xmx to 2g
+            value: "-Xms2g -Xmx2g" # Example: 2GB heap. Adjust for your actual needs.
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          # Optional: Add any other environment variables for Elasticsearch configuration
+          # - name: xpack.monitoring.collection.enabled
+          #   value: "true"
+          # - name: CLUSTER_INITIAL_MASTER_NODES # <<< ADD THIS ENVIRONMENT VARIABLE
+          #   value: "elasticsearch-0,elasticsearch-1,elasticsearch-2" 
+        resources:
+          requests:
+            memory: 4Gi # Request 4GB memory
+            cpu: 1 # Request 1 CPU core
+          limits:
+            memory: 4Gi # Limit to 4GB memory
+            cpu: 2 # Limit to 2 CPU cores (burst capacity)
+        
+        ports:
+        - containerPort: 9200 # HTTP
+          name: http
+        - containerPort: 9300 # Transport
+          name: transport
+        
+        volumeMounts:
+        - name: config
+          mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          subPath: elasticsearch.yml
+        - name: config
+          mountPath: /usr/share/elasticsearch/config/log4j2.properties
+          subPath: log4j2.properties
+        - name: certs
+          mountPath: /usr/share/elasticsearch/config/certs
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+        
+        # securityContext:
+        #   allowPrivilegeEscalation: false # Prevent processes from gaining more privileges
+        #   readOnlyRootFilesystem: true    # Make root filesystem read-only (all writes to mounted volumes)
+        #   runAsNonRoot: true              # Ensure container runs as non-root user (UID 1000)
+        # Health Checks
+        startupProbe:
+          tcpSocket:
+          # httpGet:
+          #   scheme: HTTPS # Use HTTPS for secure cluster
+          #   path: /_cluster/health?wait_for_status=green&timeout=1s
+            port: 9200
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 60 # Allow 5 minutes for startup
+        livenessProbe:
+          tcpSocket:
+          # httpGet:
+          #   scheme: HTTPS
+          #   path: /_cluster/health?timeout=1s
+            port: 9200
+          initialDelaySeconds: 30 # Give some time after startup
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+          # httpGet:
+          #   scheme: HTTPS
+          #   path: /_cluster/health?timeout=1s
+            port: 9200
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+      volumes:
+      - name: config
+        configMap:
+          name: elasticsearch-config
+      - name: certs
+        secret:
+          secretName: elastic-certificates
+  
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ] # Must be ReadWriteOnce for StatefulSets
+      resources:
+        requests:
+          storage: 50Gi # Adjust storage size as needed for production data
+      # storageClassName: your-custom-storage-class # Uncomment and set if not using default

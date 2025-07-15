@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: elasticsearch-pdb
+  namespace: elastic
+spec:
+  minAvailable: 2 # Allow at most 1 node to be unavailable at a time (for a 3 node cluster)
+  selector:
+    matchLabels:
+      app: elasticsearch

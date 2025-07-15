@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-bootstrap
+  namespace: kafka
+  labels:
+    app: kafka
+spec:
+  # This is a standard ClusterIP service, providing a stable internal IP and DNS name.
+  type: ClusterIP
+  ports:
+    # This port is for client connections.
+    - name: client
+      port: 9094
+      protocol: TCP
+      targetPort: 9094
+  # This selector finds all pods labeled as Kafka brokers.
+  selector:
+    app: kafka
+    component: broker

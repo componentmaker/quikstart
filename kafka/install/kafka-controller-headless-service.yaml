@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-controller-headless
+  namespace: kafka
+  labels:
+    app: kafka
+    component: controller
+spec:
+  # This makes the service "headless", used for DNS-based discovery by the StatefulSet.
+  clusterIP: None
+  ports:
+    - name: controller
+      port: 9093
+      protocol: TCP
+  # This selector must match the labels on the controller pods.
+  selector:
+    app: kafka
+    component: controller

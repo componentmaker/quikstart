@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-broker-config
+  namespace: kafka
+  labels:
+    app: kafka
+    component: broker
+data:
+  server.properties: |
+    # ================= KRAFT BROKER CONFIGURATION =================
+    process.roles=broker
+    node.id=BROKER_ID_PLACEHOLDER
+    controller.quorum.voters=0@kafka-controller-0.kafka-controller-headless.kafka.svc.cluster.local:9093,1@kafka-controller-1.kafka-controller-headless.kafka.svc.cluster.local:9093,2@kafka-controller-2.kafka-controller-headless.kafka.svc.cluster.local:9093
+
+    # --- Listeners ---
+    listeners=BROKER://:9092,CLIENT://:9094
+    inter.broker.listener.name=BROKER
+    listener.security.protocol.map=BROKER:SSL,CONTROLLER:SSL,CLIENT:SSL
+    advertised.listeners=BROKER://INTERNAL_ADVERTISED_HOSTNAME_PLACEHOLDER:9092,CLIENT://kafka-bootstrap.kafka.svc.cluster.local:9094
+
+    controller.listener.names=CONTROLLER
+
+    # --- Global SSL configuration for outbound client connections ---
+    ssl.truststore.location=/etc/kafka/secrets/broker.truststore.jks
+    ssl.truststore.password=install123!
+    ssl.keystore.location=/etc/kafka/secrets/broker.keystore.jks
+    ssl.keystore.password=install123!
+    ssl.key.password=install123!
+
+    # --- Security: BROKER Listener (SSL Server Socket) ---
+    listener.name.broker.ssl.keystore.location=/etc/kafka/secrets/broker.keystore.jks
+    listener.name.broker.ssl.keystore.password=install123!
+    listener.name.broker.ssl.truststore.location=/etc/kafka/secrets/broker.truststore.jks
+    listener.name.broker.ssl.truststore.password=install123!
+    listener.name.broker.ssl.client.auth=required
+
+    # --- Security: CLIENT Listener (SSL Server Socket) ---
+    listener.name.client.ssl.keystore.location=/etc/kafka/secrets/broker.keystore.jks
+    listener.name.client.ssl.keystore.password=install123!
+    listener.name.client.ssl.truststore.location=/etc/kafka/secrets/broker.truststore.jks
+    listener.name.client.ssl.truststore.password=install123!
+    listener.name.client.ssl.client.auth=required
+
+    # --- Authorization and Super Users ---
+    authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer
+    super.users=User:kafka-broker;User:kafka-controller;User:kafka-client
+    ssl.principal.mapping.rules=RULE:^CN=(.*?)(,.*)?$/$1/
+
+    # --- Log Directories ---
+    log.dirs=/kafka/data-logs

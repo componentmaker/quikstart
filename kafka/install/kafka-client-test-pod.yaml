@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kafka-client-test
+  namespace: kafka
+spec:
+  containers:
+  - name: kafka-client
+    image: apache/kafka:3.9.1
+    # Keep the pod running
+    command: ["/bin/sh", "-c", "sleep infinity"]
+    volumeMounts:
+    # Mount the client's connection properties
+    - name: client-config
+      mountPath: "/etc/kafka-client/config"
+    # Mount the client's keystore and truststore
+    - name: client-secrets
+      mountPath: "/etc/kafka-client/secrets"
+      readOnly: true
+  volumes:
+  - name: client-config
+    configMap:
+      name: kafka-client-config
+  - name: client-secrets
+    secret:
+      secretName: kafka-client-secrets

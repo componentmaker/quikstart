@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-config
+  namespace: elastic
+data:
+  elasticsearch.yml: |
+    cluster.name: elasticsearch-cluster
+    node.name: ${POD_NAME}
+
+    node.roles: [ master, data, ingest ]    
+    
+    network.host: 0.0.0.0
+    http.port: 9200
+    transport.port: 9300
+
+    # Paths
+    path.data: /usr/share/elasticsearch/data
+    path.logs: /usr/share/elasticsearch/logs
+
+    # Security (TLS)
+    xpack.security.enabled: true
+    xpack.security.http.ssl.enabled: true
+    xpack.security.http.ssl.certificate_authorities: /usr/share/elasticsearch/config/certs/ca.crt
+    xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certs/node.crt
+    xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certs/node.key
+    xpack.security.transport.ssl.enabled: true
+    xpack.security.transport.ssl.verification_mode: certificate
+    # xpack.security.transport.ssl.verification_mode: none
+    xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/certs/ca.crt
+    xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certs/node.crt
+    xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/node.key
+
+    # Discovery
+    discovery.seed_hosts: ["es-svc.elastic.svc.cluster.local"]
+    cluster.initial_master_nodes: ["elasticsearch-0", "elasticsearch-1", "elasticsearch-2"] # Assuming 3 initial nodes
+
+    # Heap size (adjust based on your node memory)
+    # ES_JAVA_OPTS will override this, but good to have a default here too for clarity
+    # ES will auto-detect up to 50% of available memory, or 32GB
+    # For production, set ES_JAVA_OPTS correctly based on K8s limits
+    # xpack.ml.enabled: false # Disable ML if not needed to save resources
+    # xpack.security.enrollment.enabled: true # Enable for simplified setup with Kibana
+    # xpack.security.http.ssl.client_authentication: optional # Optional for client auth
+  log4j2.properties: |
+    status = error
+    name = elasticsearch-config
+    appender.console.type = Console
+    appender.console.name = console
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] %marker%m%n
+    rootLogger.level = info 
+    rootLogger.appenderRef.console.ref = console
