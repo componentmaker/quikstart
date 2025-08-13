@@ -61,8 +61,8 @@ echo "   es-cert-generator pod is running."
 
 # 3. Generate a new CA certificate inside the pod
 echo "3. Generating new CA certificate..."
-kubectl exec -it es-cert-generator -n "$NAMESPACE" -- bin/elasticsearch-certutil ca --pem --out /usr/share/elasticsearch/certs/ca.zip
-kubectl exec -it es-cert-generator -n "$NAMESPACE" -- unzip -o /usr/share/elasticsearch/certs/ca.zip -d /usr/share/elasticsearch/certs/
+kubectl exec -it es-cert-generator -n "$NAMESPACE" -- sh -c "bin/elasticsearch-certutil ca --pem --out /usr/share/elasticsearch/certs/ca.zip"
+kubectl exec -it es-cert-generator -n "$NAMESPACE" -- sh -c "unzip -o /usr/share/elasticsearch/certs/ca.zip -d /usr/share/elasticsearch/certs/"
 echo "   New CA certificate generated."
 
 # 4. Generate new Node Certificates inside the pod
@@ -70,25 +70,25 @@ echo "4. Generating new node certificates..."
 DNS_SANS=$(IFS=,; echo "${ES_POD_NAMES[*]}")
 DNS_SANS="${DNS_SANS},${ES_SVC_DNS},localhost"
 
-kubectl exec -it es-cert-generator -n "$NAMESPACE" -- bin/elasticsearch-certutil cert \
+kubectl exec -it es-cert-generator -n "$NAMESPACE" -- sh -c "bin/elasticsearch-certutil cert \
   --name elasticsearch-node \
   --dns "${DNS_SANS}" \
   --ip 127.0.0.1 \
   --ca-cert /usr/share/elasticsearch/certs/ca/ca.crt \
   --ca-key /usr/share/elasticsearch/certs/ca/ca.key \
   --pem \
-  --out /usr/share/elasticsearch/certs/certs.zip
+  --out /usr/share/elasticsearch/certs/certs.zip"
 
-kubectl exec -it es-cert-generator -n "$NAMESPACE" -- unzip -o /usr/share/elasticsearch/certs/certs.zip -d /usr/share/elasticsearch/certs/
+kubectl exec -it es-cert-generator -n "$NAMESPACE" -- sh -c "unzip -o /usr/share/elasticsearch/certs/certs.zip -d /usr/share/elasticsearch/certs/"
 echo "   New node certificates generated."
 
 # 5. Copy certificates locally and handle rotation logic
 echo "5. Copying certificates locally and preparing secrets..."
 mkdir -p ./es-certs
-kubectl cp "${NAMESPACE}/es-cert-generator:/usr/share/elasticsearch/certs/ca/ca.crt" ./es-certs/ca.crt
-kubectl cp "${NAMESPACE}/es-cert-generator:/usr/share/elasticsearch/certs/ca/ca.key" ./es-certs/ca.key
-kubectl cp "${NAMESPACE}/es-cert-generator:/usr/share/elasticsearch/certs/elasticsearch-node/elasticsearch-node.crt" ./es-certs/node.crt
-kubectl cp "${NAMESPACE}/es-cert-generator:/usr/share/elasticsearch/certs/elasticsearch-node/elasticsearch-node.key" ./es-certs/node.key
+kubectl cp -n "$NAMESPACE" "es-cert-generator:/usr/share/elasticsearch/certs/ca/ca.crt" ./es-certs/ca.crt
+kubectl cp -n "$NAMESPACE" "es-cert-generator:/usr/share/elasticsearch/certs/ca/ca.key" ./es-certs/ca.key
+kubectl cp -n "$NAMESPACE" "es-cert-generator:/usr/share/elasticsearch/certs/elasticsearch-node/elasticsearch-node.crt" ./es-certs/node.crt
+kubectl cp -n "$NAMESPACE" "es-cert-generator:/usr/share/elasticsearch/certs/elasticsearch-node/elasticsearch-node.key" ./es-certs/node.key
 echo "   New certificates copied from pod."
 
 # If in rotation mode, create a CA bundle. Otherwise, just use the new CA.
@@ -157,7 +157,7 @@ echo "8. Cleaning up temporary files and pod..."
 kubectl delete pod es-cert-generator -n "$NAMESPACE" --ignore-not-found=true
 rm 01-security-setup-pod.yaml
 rm 02-certificates-secret.yaml.template
-# rm -rf ./es-certs # Keep certs for debugging or backup
+rm -rf ./es-certs # Keep certs for debugging or backup
 echo "   Cleanup complete."
 
 # --- Final Instructions ---
