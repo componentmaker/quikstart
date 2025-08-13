@@ -62,24 +62,27 @@ echo "3. Executing certificate conversion inside the pod..."
 
 # Create PKCS12 filekubectl rollout status statefulset/$STATEFULSET_NAME -n $NAMESPACE
 kubectl exec -n ${NAMESPACE} ${TEMP_POD_NAME} -- \
-  openssl pkcs12 -export \
-  -in /mnt/certs/node.crt \
-  -inkey /mnt/certs/node.key \
-  -out /tmp/${P12_FILE} \
-  -name elastic-node \
-  -certfile /mnt/certs/ca.crt \
-  -passout "pass:${KEYSTORE_PASSWORD}"
+  sh -c "\
+openssl pkcs12 -export \
+-in /mnt/certs/node.crt \
+-inkey /mnt/certs/node.key \
+-out /tmp/${P12_FILE} \
+-name elastic-node \
+-certfile /mnt/certs/ca.crt \
+-passout pass:${KEYSTORE_PASSWORD}'\
+"
 
 # Convert PKCS12 to JKS
 kubectl exec -n ${NAMESPACE} ${TEMP_POD_NAME} -- \
-  keytool -importkeystore \
-  -deststorepass "${KEYSTORE_PASSWORD}" \
-  -destkeystore /tmp/${JKS_FILE} \
-  -srckeystore /tmp/${P12_FILE} \
-  -srcstoretype PKCS12 \
-  -srcstorepass "${KEYSTORE_PASSWORD}" \
-  -noprompt
-
+  sh -c "\
+keytool -importkeystore \
+-deststorepass "${KEYSTORE_PASSWORD}" \
+-destkeystore /tmp/${JKS_FILE} \
+-srckeystore /tmp/${P12_FILE} \
+-srcstoretype PKCS12 \
+-srcstorepass "${KEYSTORE_PASSWORD}" \
+-noprompt
+"
 echo "   JKS file generated inside the pod."
 
 # 4. Copy the generated JKS file from the pod to the local machine
