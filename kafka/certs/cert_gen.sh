@@ -194,7 +194,6 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: kafka-client-secrets
-  namespace: ${NAMESPACE}
 type: Opaque
 data:
   client.keystore.jks: $(base64 -w 0 client.keystore.jks)
