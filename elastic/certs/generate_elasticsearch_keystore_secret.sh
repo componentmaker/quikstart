@@ -73,11 +73,11 @@ kubectl exec -n ${NAMESPACE} ${TEMP_POD_NAME} -- \
 # Convert PKCS12 to JKS
 kubectl exec -n ${NAMESPACE} ${TEMP_POD_NAME} -- \
   sh -c "keytool -importkeystore \
--deststorepass "${KEYSTORE_PASSWORD}" \
+-deststorepass '${KEYSTORE_PASSWORD}' \
 -destkeystore /tmp/${JKS_FILE} \
 -srckeystore /tmp/${P12_FILE} \
 -srcstoretype PKCS12 \
--srcstorepass "${KEYSTORE_PASSWORD}" \
+-srcstorepass '${KEYSTORE_PASSWORD}' \
 -noprompt"
 echo "   JKS file generated inside the pod."
 
