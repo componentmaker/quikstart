@@ -83,7 +83,7 @@ echo "   JKS file generated inside the pod."
 
 # 4. Copy the generated JKS file from the pod to the local machine
 echo "4. Copying generated JKS file from pod..."
-kubectl cp "${NAMESPACE}/${TEMP_POD_NAME}:/tmp/${JKS_FILE}" "${LOCAL_JKS_FILE}"
+kubectl cp -n ${NAMESPACE} "${TEMP_POD_NAME}:/tmp/${JKS_FILE}" "./${LOCAL_JKS_FILE}"
 echo "   JKS file copied locally."
 
 # 5. Base64 encode the local JKS file for the Kubernetes Secret
