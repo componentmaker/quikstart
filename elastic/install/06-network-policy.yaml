@@ -25,12 +25,18 @@ spec:
           matchLabels:
             # Use a standard label that is present on all namespaces by default
             kubernetes.io/metadata.name: elastic
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          # This assumes your pegabackingservices namespace is labeled this way.
+          # Check with 'kubectl get ns --show-labels'
+          kubernetes.io/metadata.name: pegabackingservices
     ports:
-      # On the following ports
-      - protocol: TCP
-        port: 9200  # for HTTP, clients, and probes
-      - protocol: TCP
-        port: 9300  # for inter-node transport/clustering
+    # On the following ports
+    - protocol: TCP
+      port: 9200  # for HTTP, clients, and probes
+    - protocol: TCP
+      port: 9300  # for inter-node transport/clustering
 
   # Define rules for OUTGOING traffic
   egress:

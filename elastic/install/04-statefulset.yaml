@@ -73,7 +73,7 @@ spec:
         #   mountPath: /usr/share/elasticsearch/data
       containers:
       - name: elasticsearch
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.15.5
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.18.4
         env:
           - name: ELASTIC_PASSWORD
             valueFrom:

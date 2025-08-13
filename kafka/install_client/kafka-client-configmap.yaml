@@ -6,7 +6,7 @@ metadata:
 data:
   client.properties: |
     # Point to the bootstrap service defined in kafka-bootstrap-service.yaml
-    bootstrap.servers=kafka-bootstrap.kafka.svc.cluster.local:9094
+    bootstrap.servers=kafka-broker-0.kafka-headless.kafka.svc.cluster.local:9094,kafka-broker-1.kafka-headless.kafka.svc.cluster.local:9094,kafka-broker-2.kafka-headless.kafka.svc.cluster.local:9094
     # Use SSL for security
     security.protocol=SSL
     # Client's truststore to verify the broker's identity

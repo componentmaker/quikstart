@@ -66,15 +66,6 @@ else
     echo "   Error deleting Secrets. Continuing anyway."
 fi
 
-echo "8. Checking for and deleting Kibana resources (if deployed)..."
-kubectl delete deployment kibana -n "$NAMESPACE" --ignore-not-found=true
-kubectl delete svc kibana-svc -n "$NAMESPACE" --ignore-not-found=true
-if [ $? -eq 0 ]; then
-    echo "   Kibana resources deleted successfully (or not found)."
-else
-    echo "   Error deleting Kibana resources. Continuing anyway."
-fi
-
 echo "------------------------------------------------------------------"
 echo "Elasticsearch cluster teardown complete in namespace: $NAMESPACE."
 echo "The namespace '$NAMESPACE' itself has NOT been deleted."

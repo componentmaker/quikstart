@@ -17,7 +17,7 @@ data:
     listeners=BROKER://:9092,CLIENT://:9094
     inter.broker.listener.name=BROKER
     listener.security.protocol.map=BROKER:SSL,CONTROLLER:SSL,CLIENT:SSL
-    advertised.listeners=BROKER://INTERNAL_ADVERTISED_HOSTNAME_PLACEHOLDER:9092,CLIENT://kafka-bootstrap.kafka.svc.cluster.local:9094
+    advertised.listeners=BROKER://INTERNAL_ADVERTISED_HOSTNAME_PLACEHOLDER:9092,CLIENT://INTERNAL_ADVERTISED_HOSTNAME_PLACEHOLDER:9094
 
     controller.listener.names=CONTROLLER
 
