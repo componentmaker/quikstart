@@ -26,9 +26,9 @@ data:
 
     # --- Security: SSL/TLS for the CONTROLLER listener ---
     listener.name.controller.ssl.keystore.location=/etc/kafka/secrets/controller.keystore.jks
-    listener.name.controller.ssl.keystore.password=install123!
+    listener.name.controller.ssl.keystore.password=SSL_PASSWORD_PLACEHOLDER
     listener.name.controller.ssl.truststore.location=/etc/kafka/secrets/controller.truststore.jks
-    listener.name.controller.ssl.truststore.password=install123!
+    listener.name.controller.ssl.truststore.password=SSL_PASSWORD_PLACEHOLDER
     listener.name.controller.ssl.client.auth=required
 
     # --- Security: Authorization ---

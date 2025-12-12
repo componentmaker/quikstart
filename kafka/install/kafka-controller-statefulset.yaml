@@ -20,10 +20,24 @@ spec:
         component: controller
     spec:
       securityContext:
-        fsGroup: 0
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         - name: config-initializer
           image: busybox:1.36
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -37,14 +51,32 @@ spec:
               mkdir -p /processed-config
               ORDINAL=${HOSTNAME##*-}
               echo "Initializing config for controller node: $ORDINAL"
-              sed "s/CONTROLLER_ID_PLACEHOLDER/$ORDINAL/g" /config-template/server.properties > /processed-config/server.properties
+              sed -e "s/CONTROLLER_ID_PLACEHOLDER/$ORDINAL/g" \
+                  -e "s/SSL_PASSWORD_PLACEHOLDER/${KAFKA_SSL_PASSWORD}/g" \
+                  /config-template/server.properties > /processed-config/server.properties
           volumeMounts:
             - name: config-template
               mountPath: /config-template
             - name: processed-config
               mountPath: /processed-config
+            - name: tmp
+              mountPath: /tmp
+          env:
+            - name: KAFKA_SSL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-ssl-password
+                  key: password
         - name: prepare-storage
           image: apache/kafka:3.9.1
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -68,13 +100,33 @@ spec:
                 --ignore-formatted
           env:
             - name: KAFKA_CLUSTER_ID
-              value: "io9BKK6KRpSRz2uIOTva-g"
+              valueFrom:
+                configMapKeyRef:
+                  name: kafka-cluster-config
+                  key: cluster.id
+            # Override default GC file logging to a writable path.
+            - name: KAFKA_GC_LOG_OPTS
+              value: "-Xlog:gc*:file=/tmp/kafkaServer-gc.log:time,tags:filecount=10,filesize=100M"
+            - name: KAFKA_JVM_PERFORMANCE_OPTS
+              value: "-Xlog:gc*:file=/tmp/kafkaServer-gc.log:time,tags:filecount=10,filesize=100M"
           volumeMounts:
             - name: controller-logs
               mountPath: /kafka/controller-logs
+            - name: tmp
+              mountPath: /tmp
+            - name: kafka-logs
+              mountPath: /opt/kafka/logs
       containers:
         - name: kafka-controller
           image: apache/kafka:3.9.1
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           command:
             - "/opt/kafka/bin/kafka-server-start.sh"
             - "/processed-config/server.properties"
@@ -84,6 +136,10 @@ spec:
           env:
             - name: KAFKA_HEAP_OPTS
               value: "-Xmx1G -Xms1G"
+            - name: KAFKA_GC_LOG_OPTS
+              value: "-Xlog:gc*:file=/tmp/kafkaServer-gc.log:time,tags:filecount=10,filesize=100M"
+            - name: KAFKA_JVM_PERFORMANCE_OPTS
+              value: "-Xlog:gc*:file=/tmp/kafkaServer-gc.log:time,tags:filecount=10,filesize=100M"
           volumeMounts:
             - name: controller-logs
               mountPath: /kafka/controller-logs
@@ -92,6 +148,10 @@ spec:
             - name: controller-secrets
               mountPath: /etc/kafka/secrets
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            - name: kafka-logs
+              mountPath: /opt/kafka/logs
       volumes:
         - name: config-template
           configMap:
@@ -101,6 +161,10 @@ spec:
         - name: controller-secrets
           secret:
             secretName: kafka-controller-secrets
+        - name: tmp
+          emptyDir: {}
+        - name: kafka-logs
+          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: controller-logs

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-env
+  namespace: elastic
+  labels:
+    app: elasticsearch
+data:
+  # Heap defaults for 4Gi memory limit. Tune to ~50% of container memory.
+  ES_JAVA_OPTS: "-Xms2g -Xmx2g"

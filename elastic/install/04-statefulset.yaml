@@ -89,9 +89,11 @@ spec:
           # - name: DISCOVERY_SERVICE
           #   value: es-svc.elastic.svc.cluster.local
           - name: ES_JAVA_OPTS
-            # Adjust based on your node memory. Typically 50% of allocated memory, but not more than 30.5GB.
-            # Example: for 4GiB memory limit, set Xms/Xmx to 2g
-            value: "-Xms2g -Xmx2g" # Example: 2GB heap. Adjust for your actual needs.
+            # Adjust via elasticsearch-env ConfigMap.
+            valueFrom:
+              configMapKeyRef:
+                name: elasticsearch-env
+                key: ES_JAVA_OPTS
           - name: POD_NAME
             valueFrom:
               fieldRef:

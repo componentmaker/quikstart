@@ -1,7 +1,17 @@
 #!/bin/bash
 
-set -eo pipefail
+set -euo pipefail
 set -x
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "Error: required command '$1' not found in PATH." >&2
+    exit 1
+  }
+}
+
+require_cmd kubectl
+require_cmd base64
 # --- Configuration ---
 PASSWORD="install123!"
 NAMESPACE="kafka"

@@ -1,7 +1,19 @@
 #!/bin/bash
 
 # Exit immediately if a command exits with a non-zero status.
-set -e
+set -euo pipefail
+
+require_cmd() {
+    command -v "$1" >/dev/null 2>&1 || {
+        echo "Error: required command '$1' not found in PATH." >&2
+        exit 1
+    }
+}
+
+require_cmd kubectl
+require_cmd envsubst
+require_cmd base64
+require_cmd unzip
 
 # --- Configuration ---
 NAMESPACE="elastic"
