@@ -11,8 +11,8 @@ data:
     security.protocol=SSL
     # Client's truststore to verify the broker's identity
     ssl.truststore.location=/etc/kafka-client/secrets/kafka.truststore.jks
-    ssl.truststore.password=install123!
+    ssl.truststore.password=SSL_PASSWORD_PLACEHOLDER
     # Client's keystore for its own identity (for mTLS)
     ssl.keystore.location=/etc/kafka-client/secrets/client.keystore.jks
-    ssl.keystore.password=install123!
-    ssl.key.password=install123!
+    ssl.keystore.password=SSL_PASSWORD_PLACEHOLDER
+    ssl.key.password=SSL_PASSWORD_PLACEHOLDER

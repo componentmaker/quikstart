@@ -18,10 +18,10 @@ Next thing is to install elasticsearch.
 ```bash
 # assuming you are in the root of your cloned directory
 cd elastic 
-kubectl -f apply install/ -n elastic
+kubectl apply -f install/ -n elastic
 kubectl rollout status statefulset/elasticsearch -n elastic --watch
 
-# Once the elastcsearch cluster is bootstrapped
+# Once the elasticsearch cluster is bootstrapped
 ./install/post_deployment.sh
 kubectl rollout status statefulset/elasticsearch -n elastic --watch
 ```
@@ -36,10 +36,16 @@ Perform
 ```bash
 # assuming you are in the root of your cloned directory
 cd elastic/certs
-./generate_certs_secret.sh
+./generate_elasticsearch_secrets.sh
 kubectl rollout restart statefulset/elasticsearch -n elastic
 kubectl rollout status statefulset/elasticsearch -n elastic --watch
 ```
+
+Rotation is two‑phase: the first run bundles old+new CAs so nodes trust both. After the rollout completes, run `./generate_elasticsearch_secrets.sh` again to remove the old CA from the bundle.
+
+## Network policy
+
+`install/06-network-policy.yaml` allows access from the `pegabackingservices` namespace by label. Ensure that namespace has the label `kubernetes.io/metadata.name=pegabackingservices`, or adjust the policy.
 
 ## Tear down the cluster fully.
 
@@ -48,6 +54,5 @@ Beware this will completely remove elastic search from your cluster.  Namespace 
 ```bash
 # assuming you are in the root of your cloned directory
 cd elastic/install
-./teardown.sh
+./tear_down.sh
 ```
-

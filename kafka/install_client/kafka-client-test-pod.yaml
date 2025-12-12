@@ -10,17 +10,49 @@ spec:
     # Keep the pod running
     command: ["/bin/sh", "-c", "sleep infinity"]
     volumeMounts:
-    # Mount the client's connection properties
-    - name: client-config
+    # Use processed config produced by init container
+    - name: processed-config
       mountPath: "/etc/kafka-client/config"
     # Mount the client's keystore and truststore
     - name: client-secrets
       mountPath: "/etc/kafka-client/secrets"
       readOnly: true
+    - name: tmp
+      mountPath: /tmp
+  initContainers:
+  - name: config-initializer
+    image: busybox:1.36
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        set -e
+        while [ ! -f /config-template/client.properties ]; do
+          echo "Waiting for ConfigMap file to be mounted..." && sleep 1
+        done
+        mkdir -p /processed-config
+        sed -e "s/SSL_PASSWORD_PLACEHOLDER/${KAFKA_SSL_PASSWORD}/g" \
+          /config-template/client.properties > /processed-config/client.properties
+    env:
+      - name: KAFKA_SSL_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: kafka-ssl-password
+            key: password
+    volumeMounts:
+      - name: client-config
+        mountPath: /config-template
+      - name: processed-config
+        mountPath: /processed-config
+      - name: tmp
+        mountPath: /tmp
   volumes:
   - name: client-config
     configMap:
       name: kafka-client-config
+  - name: processed-config
+    emptyDir: {}
   - name: client-secrets
     secret:
       secretName: kafka-client-secrets
+  - name: tmp
+    emptyDir: {}

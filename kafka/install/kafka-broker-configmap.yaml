@@ -23,23 +23,23 @@ data:
 
     # --- Global SSL configuration for outbound client connections ---
     ssl.truststore.location=/etc/kafka/secrets/broker.truststore.jks
-    ssl.truststore.password=install123!
+    ssl.truststore.password=SSL_PASSWORD_PLACEHOLDER
     ssl.keystore.location=/etc/kafka/secrets/broker.keystore.jks
-    ssl.keystore.password=install123!
-    ssl.key.password=install123!
+    ssl.keystore.password=SSL_PASSWORD_PLACEHOLDER
+    ssl.key.password=SSL_PASSWORD_PLACEHOLDER
 
     # --- Security: BROKER Listener (SSL Server Socket) ---
     listener.name.broker.ssl.keystore.location=/etc/kafka/secrets/broker.keystore.jks
-    listener.name.broker.ssl.keystore.password=install123!
+    listener.name.broker.ssl.keystore.password=SSL_PASSWORD_PLACEHOLDER
     listener.name.broker.ssl.truststore.location=/etc/kafka/secrets/broker.truststore.jks
-    listener.name.broker.ssl.truststore.password=install123!
+    listener.name.broker.ssl.truststore.password=SSL_PASSWORD_PLACEHOLDER
     listener.name.broker.ssl.client.auth=required
 
     # --- Security: CLIENT Listener (SSL Server Socket) ---
     listener.name.client.ssl.keystore.location=/etc/kafka/secrets/broker.keystore.jks
-    listener.name.client.ssl.keystore.password=install123!
+    listener.name.client.ssl.keystore.password=SSL_PASSWORD_PLACEHOLDER
     listener.name.client.ssl.truststore.location=/etc/kafka/secrets/broker.truststore.jks
-    listener.name.client.ssl.truststore.password=install123!
+    listener.name.client.ssl.truststore.password=SSL_PASSWORD_PLACEHOLDER
     listener.name.client.ssl.client.auth=required
 
     # --- Authorization and Super Users ---

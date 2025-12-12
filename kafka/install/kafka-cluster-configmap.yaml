@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-cluster-config
+  namespace: kafka
+  labels:
+    app: kafka
+data:
+  # Override this value to create a fresh cluster.
+  cluster.id: "io9BKK6KRpSRz2uIOTva-g"

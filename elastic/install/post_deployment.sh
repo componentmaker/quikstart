@@ -1,4 +1,16 @@
 #!/bin/bash
+set -euo pipefail
+
+require_cmd() {
+    command -v "$1" >/dev/null 2>&1 || {
+        echo "Error: required command '$1' not found in PATH." >&2
+        exit 1
+    }
+}
+
+require_cmd kubectl
+require_cmd yq
+require_cmd sed
 
 # --- Configuration ---
 NAMESPACE="elastic"
@@ -11,10 +23,6 @@ LINE_TO_REMOVE="cluster.initial_master_nodes"
 # Step 1: Get the entire original ConfigMap YAML.
 echo "Fetching current ConfigMap '$CONFIGMAP_NAME'..."
 original_cm_yaml=$(kubectl get configmap "$CONFIGMAP_NAME" -n "$NAMESPACE" -o yaml)
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to get ConfigMap. Aborting."
-    exit 1
-fi
 
 # Step 2: Extract the raw string content of the 'elasticsearch.yml' key.
 # We use yq for this to handle YAML structure correctly.
