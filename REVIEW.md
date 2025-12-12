@@ -40,6 +40,12 @@ This repo provides Kubernetes manifests and helper scripts to deploy an Elastics
 
 ## Recommended improvements (actionable)
 
+## Notes from hardening (practical)
+
+- **Kafka + `readOnlyRootFilesystem`.** The Apache Kafka image can fail fast if JVM GC logging is configured to write under `/opt/kafka/.../logs` on a read-only root filesystem. If enabling ROFS, ensure GC logs are redirected to a writable mount (for example `/tmp`) via Kafka/JVM env overrides, and validate by restarting non-zero ordinals first (StatefulSet ordering can mask whether a fix is applied).
+- **Client config templating.** Unlike brokers/controllers (which can template `server.properties` in an init container), a plain client ConfigMap with placeholders won’t work unless the client deployment also performs templating at runtime (init container or entrypoint wrapper) or the passwords are injected from Secrets directly.
+- **Client secrets in other namespaces.** Client TLS/password secrets cannot be referenced cross-namespace. To support “clients in any namespace”, ship Secret manifests without `metadata.namespace` and apply them with `kubectl apply -n <client-ns> ...`, or template them as part of the client deployment in that namespace.
+
 ### Security and configurability
 1. **Parameterize secrets and IDs.**
    - Read Kafka keystore/truststore password from an env var (with prompt fallback) and avoid writing it into ConfigMaps in cleartext; instead mount a secret and reference via `ssl.*.password` envs or `server.properties` created by init.
@@ -66,4 +72,3 @@ This repo provides Kubernetes manifests and helper scripts to deploy an Elastics
 
 ## Overall assessment
 The repo is a strong base for secure ES/Kafka quickstarts. The biggest gaps are around security hygiene (hard‑coded passwords/IDs), a couple of documentation/filename mismatches, and portability to stricter Kubernetes environments. Addressing those will make this genuinely production‑ready for most teams.
-
